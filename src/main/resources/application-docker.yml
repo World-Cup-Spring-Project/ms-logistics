@@ -1,0 +1,41 @@
+# Profile 'docker' - executando dentro do docker-compose.
+# Hosts referenciam os SERVICE NAMES do compose (DNS interno da rede user-defined).
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/ms_logistics
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: kafka:9092      # listener interno (PLAINTEXT) entre containers
+    consumer:
+      group-id: ms-logistics
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "br.com.infnet.mslogistics.infra.kafka.events"
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+
+arenacup:
+  integrations:
+    core-data:
+      base-url: ${CORE_DATA_BASE_URL:http://ms-core-data:8081}
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL:http://eureka:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    root: INFO
+    br.com.infnet.mslogistics: INFO
