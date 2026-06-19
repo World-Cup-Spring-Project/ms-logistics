@@ -1,15 +1,20 @@
-# Profile 'local' - desenvolvimento na maquina do desenvolvedor.
-# Conectando na infraestrutura geral do WorldCupSpringProject
+# Profile 'local' - desenvolvimento na maquina conectando na stack WorldCupSpringProject.
 spring:
   datasource:
-    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5433/arenacup_db}
-    username: ${POSTGRES_USER:arenacup_user}
-    password: ${POSTGRES_PASSWORD:arenacup_password}
+    url: jdbc:postgresql://localhost:5433/arenacup?currentSchema=logistics
+    username: ${POSTGRES_USER:arenacup}
+    password: ${POSTGRES_PASSWORD:arenacup}
     hikari:
       maximum-pool-size: 10
   flyway:
     enabled: true
     baseline-on-migrate: true
+    schemas: logistics
+    default-schema: logistics
+  jpa:
+    properties:
+      hibernate:
+        default_schema: logistics
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
@@ -17,7 +22,7 @@ spring:
       group-id: ms-logistics
       auto-offset-reset: earliest
       properties:
-        spring.json.trusted.packages: "br.com.infnet.mslogistics.infra.kafka.events"
+        spring.json.trusted.packages: "br.com.infnet.mslogistics.kafka"
     producer:
       acks: all
       properties:
@@ -25,10 +30,10 @@ spring:
 
 eureka:
   client:
-    register-with-eureka: false
-    fetch-registry: false
+    register-with-eureka: true
+    fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
 

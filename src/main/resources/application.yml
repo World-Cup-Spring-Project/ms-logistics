@@ -25,6 +25,12 @@ management:
     web:
       exposure:
         include: health,info,metrics,circuitbreakers,prometheus
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
   endpoint:
     health:
       probes:
@@ -63,6 +69,13 @@ arenacup:
     core-data:
       base-url: ${CORE_DATA_BASE_URL:http://localhost:8081}
 
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+
 # ---------------------------------------------------------------------------
 # Resilience4j: padrao explicitamente cobrado em aula (29/05/2026).
 # - core-data:   chamadas REST sincronas ao ms-core-data (validar teamId).
@@ -97,3 +110,7 @@ resilience4j:
         retry-exceptions:
           - org.apache.kafka.common.errors.RetriableException
           - org.springframework.kafka.KafkaException
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

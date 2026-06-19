@@ -19,7 +19,7 @@ spring:
       group-id: ms-logistics
       auto-offset-reset: latest                # prod nao reprocessa tudo do zero
       properties:
-        spring.json.trusted.packages: "br.com.infnet.mslogistics.infra.kafka.events"
+        spring.json.trusted.packages: "br.com.infnet.mslogistics.kafka"
     producer:
       acks: all
       properties:

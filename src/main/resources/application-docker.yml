@@ -1,21 +1,26 @@
-# Profile 'docker' - executando dentro do docker-compose.
-# Hosts referenciam os SERVICE NAMES do compose (DNS interno da rede user-defined).
+# Profile 'docker' - executando dentro do docker-compose central (WorldCupSpringProject).
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/ms_logistics
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:postgres}
+    url: jdbc:postgresql://postgres:5432/arenacup?currentSchema=logistics
+    username: ${POSTGRES_USER:arenacup}
+    password: ${POSTGRES_PASSWORD:arenacup}
   flyway:
     enabled: true
     baseline-on-migrate: true
+    schemas: logistics
+    default-schema: logistics
+  jpa:
+    properties:
+      hibernate:
+        default_schema: logistics
 
   kafka:
-    bootstrap-servers: kafka:9092      # listener interno (PLAINTEXT) entre containers
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: ms-logistics
       auto-offset-reset: earliest
       properties:
-        spring.json.trusted.packages: "br.com.infnet.mslogistics.infra.kafka.events"
+        spring.json.trusted.packages: "br.com.infnet.mslogistics.kafka"
     producer:
       acks: all
       properties:
@@ -31,7 +36,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_SERVICE_URL:http://eureka:8761/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka:8761/eureka/}
   instance:
     prefer-ip-address: true
 
