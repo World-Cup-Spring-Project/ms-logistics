@@ -1,0 +1,50 @@
+# Profile 'prod' - executando em Kubernetes.
+# Todos os hosts vem de ConfigMap/Secret injetados como environment variables.
+# Service Discovery: K8s Cluster DNS (kafka-broker.kafka.svc.cluster.local).
+# Eureka segue ativo para registro no service registry comum do ArenaCup.
+spring:
+  datasource:
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}            # vindo de Secret
+    hikari:
+      maximum-pool-size: 32
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ms-logistics
+      auto-offset-reset: latest                # prod nao reprocessa tudo do zero
+      properties:
+        spring.json.trusted.packages: "br.com.infnet.mslogistics.infra.kafka.events"
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+
+arenacup:
+  integrations:
+    core-data:
+      base-url: ${CORE_DATA_BASE_URL}
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL}
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    root: INFO
+    br.com.infnet.mslogistics: INFO
+
+management:
+  endpoint:
+    health:
+      show-details: never

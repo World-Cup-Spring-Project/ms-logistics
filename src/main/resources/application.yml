@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: ms-logistics
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+
+server:
+  port: ${SERVER_PORT:8086}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,kafka
+  health:
+    db:
+      enabled: true
+    kafka:
+      enabled: true
+
+# ---------------------------------------------------------------------------
+# Eventos Kafka publicados pelo ms-logistics.
+# Convencao do ecossistema: 1 topico POR evento (regra do professor, aula 22/05/2026).
+# Consumidor principal: ms-analytics (consolidacao de metricas de ocupacao/receita).
+# ---------------------------------------------------------------------------
+arenacup:
+  kafka:
+    topics:
+      hotel-booking-confirmed: logistics-hotel-booking-events
+      training-booking-confirmed: logistics-training-booking-events
+      transport-booking-confirmed: logistics-transport-booking-events
+      resource-released: logistics-resource-released-events
+      saga-completed: logistics-saga-completed-events
+      saga-failed: logistics-saga-failed-events
+      dead-letter: dead-letter-logistics-events
+  logistics:
+    saga:
+      timeout-minutes: 10
+  integrations:
+    core-data:
+      base-url: ${CORE_DATA_BASE_URL:http://localhost:8081}
+
+# ---------------------------------------------------------------------------
+# Resilience4j: padrao explicitamente cobrado em aula (29/05/2026).
+# - core-data:   chamadas REST sincronas ao ms-core-data (validar teamId).
+# - kafka-publish: producer Kafka, com fallback para topico dead-letter.
+# ---------------------------------------------------------------------------
+resilience4j:
+  circuitbreaker:
+    instances:
+      core-data:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+      kafka-publish:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      core-data:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+      kafka-publish:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.apache.kafka.common.errors.RetriableException
+          - org.springframework.kafka.KafkaException
